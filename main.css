@@ -1,0 +1,97 @@
+body, html {
+     height: 100%;
+  margin: 0;
+}
+body {
+    background: #fdfdfd;
+}
+
+#container{
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+}
+nav, #options-container {
+    font-family: "Segoe UI", Segoe, Tahoma, Geneva, sans-serif;
+}
+nav {
+    background: #faf9f8;
+    flex: 0 1 auto;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+    padding:5px;
+    display: flex;
+    flex-flow: row;
+    justify-content: space-between;
+    align-items: center
+}
+#searchform {
+    flex-grow: 1;
+    margin: 0 1em;
+}
+#inputbar {
+    width:100%;
+}
+#showoptions {
+    margin-left: 0.5em;
+    /*font-size: 21px;*/
+    padding: 0 3px;
+    line-height: 1;
+    /*font-weight: bold;*/
+}
+#options-container {
+    position:fixed;
+    width:100%;
+    top:0;
+    bottom: 0;
+    display:none;
+    justify-content: center;
+    overflow: auto;
+    padding: 1em 0;
+}
+#options-bg {
+    position:fixed;
+    width:100%;
+    top:0;
+    bottom: 0;
+    background:rgba(0,0,0,0.4);
+}
+#options-pane {
+    margin:1em 2em;
+    background-color: white;
+    z-index:1;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+    padding:1em;
+    text-align: center;
+    overflow: auto;
+    flex: 0 1 auto;
+}
+article {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding:1em;
+}
+article>div {
+  max-width:800px;
+  margin:0 auto;
+  }
+article a.new {
+    color: rgb(205,50,50);
+    pointer-events:none;
+    text-decoration: none;
+}
+summary, details > .NavContent {
+    border: 1px solid #ddd;
+    padding:2px;
+    background: #eee;
+}
+summary:hover {
+    background: #fff;
+    /*background: linear-gradient(to bottom, #fff, #eee);*/
+}
+summary, nav {
+    background: #eee;
+    /*background: linear-gradient(to bottom, #fdfdfd, #ddd);*/
+}
+nav {
+    z-index: 99;
+}

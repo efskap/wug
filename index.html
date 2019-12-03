@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>wug</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <meta name='description' content='lightweight, meme-free client for wiktionary'>
+    <link rel='stylesheet' type='text/css' media='screen' href='main.css'>
+</head>
+
+<body>
+    <div id="container">
+        <nav>
+            <select id="langs"></select>
+            <form id="searchform" onsubmit="javascript:load_page(inputbar.value); return false;">
+                <input type="search" list="suggestions" id="inputbar"></input>
+                <datalist id="suggestions"></datalist>
+            </form>
+            <select id="seealso"> </select>
+            <button id="showoptions">config</button>
+        </nav>
+        <div id="options-container">
+            <div id="options-bg"> </div>
+            <div id="options-pane">
+                <h2>Options</h2>
+                <h3>Language</h3>
+                <p>Enter your preferred languages here, one per line.<br/>The top ones take priority.</p>
+                <textarea rows="6" id="favlangs"></textarea>
+                <p>
+                <button id="addfavlang">Add currently selected language</button>
+                <h3>Domain</h3>
+                <p>You can change to another Wiktionary site/language here.<br/>But it might not be comptatible with the ui/tweaks since each one has its own format.</p>
+                <input type="text" placeholder="en.wiktionary.org" id="domainbox">
+            </div>
+        </div>
+        <article id="content"></article>
+    </div>
+
+<script src='main.js'></script>
+</body>
+
+</html>
