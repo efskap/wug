@@ -111,7 +111,7 @@ function load_page(title, lang, useReplaceState) {
                 edit.remove();
             }
 
-            for (const navFrame of html.querySelectorAll('.NavFrame')) {
+            for (const navFrame of html.querySelectorAll('.NavFrame:not(.pseudo)')) {
                 let detail = document.createElement("details");
                 let summary = document.createElement("summary");
                 summary.textContent = navFrame.querySelector('.NavHead').textContent;
