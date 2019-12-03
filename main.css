@@ -39,6 +39,7 @@ nav {
     /*font-weight: bold;*/
 }
 #options-container {
+    z-index:2;
     position:fixed;
     width:100%;
     top:0;
@@ -58,8 +59,8 @@ nav {
 #options-pane {
     margin:1em 2em;
     background-color: white;
-    z-index:1;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+    z-index: 2;
     padding:1em;
     text-align: center;
     overflow: auto;
@@ -93,5 +94,5 @@ summary, nav {
     /*background: linear-gradient(to bottom, #fdfdfd, #ddd);*/
 }
 nav {
-    z-index: 99;
+    z-index: 1;
 }
