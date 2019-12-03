@@ -40,7 +40,7 @@ function load_page(title, lang, useReplaceState) {
         }
     }
 
-    document.getElementById("content").innerHTML = `Loading <b>${pretty_title}</b>...`;
+    document.getElementById("content").innerHTML = `<div id="loadingText"><span>Loading <b>${pretty_title}</b>...</span></div>`;
 
     favlangs.value = localStorage.favlangs || '';
     domainbox.value = hostname;

@@ -70,11 +70,13 @@ article {
   flex: 1 1 auto;
   overflow: auto;
   padding:1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 article>div {
-  max-width:800px;
-  margin:0 auto;
-  }
+    max-width:800px;
+}
 article a.new {
     color: rgb(205,50,50);
     pointer-events:none;
@@ -95,4 +97,13 @@ summary, nav {
 }
 nav {
     z-index: 1;
+}
+#loadingText {
+    font-size:1.5em;
+    max-width:100%;
+    text-align: center;
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    justify-content: center;
 }
