@@ -4,9 +4,9 @@ let sub_pages = {};
 let page_langs = [];
 let page_cache = {};
 
-function pre_fetch(title){
-};
-function fetch_page(title){
+function pre_fetch(title) {};
+
+function fetch_page(title) {
     let cache_hit = page_cache[title];
     if (cache_hit) {
         console.log(`cache hit on ${title}!`);
@@ -17,15 +17,16 @@ function fetch_page(title){
         return Promise.resolve(data);
     });
 }
+
 function load_page(title, lang, useReplaceState) {
     let pretty_title = decodeURIComponent(title).replace('_', ' ');
-    document.title = `${pretty_title} - ${appName}`;
 
     let original_hash = lang ? ('#' + lang) : location.hash;
     if (original_hash === '#') {
         original_hash = '';
     }
 
+    updateTitle();
     let canonical_url = location.href.split('#')[0].split('?')[0] + '?' + title + original_hash;
     console.log('canonical url: ' + canonical_url);
     if (location.href !== canonical_url) {
@@ -33,14 +34,14 @@ function load_page(title, lang, useReplaceState) {
         if (useReplaceState) {
             console.log("replacing state instead");
             history.replaceState(null, pretty_title, canonical_url);
-        }
-        else {
+        } else {
             console.log('pushing state');
             history.pushState(null, pretty_title, canonical_url);
         }
     }
 
     document.getElementById("content").innerHTML = `<div id="loadingText"><span>Loading <b>${pretty_title}</b>...</span></div>`;
+    document.title = `Loading ${pretty_title} - ${appName};`
 
     favlangs.value = localStorage.favlangs || '';
     domainbox.value = hostname;
@@ -48,7 +49,6 @@ function load_page(title, lang, useReplaceState) {
     langs.innerHTML = '';
 
     document.getElementById('inputbar').value = pretty_title;
-    document.title = `${pretty_title} - ${appName}`;
 
     let opt = document.createElement("option");
     opt.value = "default";
@@ -73,8 +73,8 @@ function load_page(title, lang, useReplaceState) {
 
             // populate title in header
             //document.getElementById('title').textContent = data.parse.title;
-            document.title = `${data.parse.title} - ${appName}`;
 
+            updateTitle();
             // populate language selector
             page_langs = Array.from(html.querySelectorAll('h2 > .mw-headline')).map(el => [el.textContent, el.id]);
             langs.innerHTML = '';
@@ -86,7 +86,7 @@ function load_page(title, lang, useReplaceState) {
                 langs.add(opt);
             };
 
-            let fav_lang_names  = favlangs.value.split('\n');
+            let fav_lang_names = favlangs.value.split('\n');
             for (const lang_name of fav_lang_names) {
                 let found_val = page_langs.find(x => x[0] == lang_name);
                 if (found_val) {
@@ -94,7 +94,7 @@ function load_page(title, lang, useReplaceState) {
                 }
             }
 
-            for (const lang of page_langs.filter(x=>!~fav_lang_names.indexOf(x[0]))) {
+            for (const lang of page_langs.filter(x => !~fav_lang_names.indexOf(x[0]))) {
                 add_lang(lang);
             }
             langs.disabled = page_langs.length <= 1;
@@ -162,6 +162,7 @@ function load_page(title, lang, useReplaceState) {
             set_lang_from_hash();
         });
 }
+
 function set_lang_from_hash() {
     let found_val = page_langs.find(x => x[1] == location.hash.substr(1));
     if (found_val) {
@@ -171,6 +172,7 @@ function set_lang_from_hash() {
 }
 
 function on_lang_change() {
+    updateTitle();
     if (langs.value !== "default") {
         set_subpage(langs.value);
     }
@@ -186,14 +188,30 @@ function sync_from_url() {
     }
 }
 
+function updateTitle() {
+    let query = location.search.split("?")[1];
+    let pretty_query = decodeURIComponent(query).replace('_', ' ');
+    lang = langs.value;
+    let title = pretty_query;
+    if (lang) {
+        title += ` (${lang})`;
+    }
+    title += ` - ${appName}`;
+    document.title = title;
+}
+
 function set_subpage(lang) {
     if (langs.value != lang) {
         langs.value = lang;
     }
     if (location.hash == "")
-        history.replaceState(null, document.title, location.href + '#'+lang);
-    else
-        history.replaceState(null, document.title, location.href.replace(location.hash, '#'+lang));
+        history.replaceState(null, document.title, location.href + '#' + lang);
+    else {
+        let newUrl = location.href.replace(location.hash, '#' + lang);
+        if (location.href !== newUrl) {
+            history.pushState(null, document.title, newUrl);
+        }
+    }
 
     const clone = sub_pages[lang].cloneNode(true);
 
@@ -214,12 +232,12 @@ function set_subpage(lang) {
     document.getElementById('content').innerHTML = '';
     document.getElementById('content').appendChild(clone);
 }
-langs.addEventListener('change', function () {
+langs.addEventListener('change', function() {
 
     document.getElementById("content").innerHTML = "";
     on_lang_change();
 });
-seealso.addEventListener('change', function(){
+seealso.addEventListener('change', function() {
     load_page(this.value);
 });
 // TODO: both of these events should sync from url
@@ -227,37 +245,45 @@ window.onhashchange = set_lang_from_hash;
 window.addEventListener('popstate', (event) => {
     sync_from_url();
 });
-document.getElementById('options-bg').addEventListener('click', function () {
-    document.getElementById('options-container').style.display='none';
+document.getElementById('options-bg').addEventListener('click', function() {
+    document.getElementById('options-container').style.display = 'none';
 });
-document.getElementById('showoptions').addEventListener('click', function () {
-    document.getElementById('options-container').style.display='flex';
+document.getElementById('showoptions').addEventListener('click', function() {
+    document.getElementById('options-container').style.display = 'flex';
 });
 favlangs.addEventListener('change', function() {
     localStorage.favlangs = this.value;
 });
 domainbox.addEventListener('change', function() {
     hostname = this.value;
-    page_cache={};
+    page_cache = {};
     localStorage.hostname = this.value;
 });
-addfavlang.addEventListener('click', ()=> {
+addfavlang.addEventListener('click', () => {
     favlangs.value = langs.options[langs.selectedIndex].text + "\n" + favlangs.value;
     favlangs.dispatchEvent(new Event('change'));
 });
 
+inputbar.addEventListener('focus', function() {
+    //this.setAttribute("list","suggestions");
+});
+inputbar.addEventListener('blur', function() {
+    //this.setAttribute("list","");
+});
 inputbar.addEventListener('input', function() {
     console.log('change');
     suggestions.innerHTML = '';
-    fetch(`https://en.wiktionary.org/w/api.php?action=opensearch&search=${encodeURIComponent(this.value)}&limit=15&namespace=0&format=json&origin=*`).then(x=>x.json()).then((data) => {
+    fetch(`https://en.wiktionary.org/w/api.php?action=opensearch&search=${encodeURIComponent(this.value)}&limit=15&namespace=0&format=json&origin=*`).then(x => x.json()).then((data) => {
         console.log(data);
         let [, titles, descriptions, links] = data;
-        links = links.map(x=>x.split('/wiki/').pop());
+        links = links.map(x => x.split('/wiki/').pop());
         for (const i in titles) {
-                let opt = document.createElement("option");
-                opt.value = titles[i];
-                suggestions.appendChild(opt);
+            let opt = document.createElement("option");
+            opt.value = titles[i];
+            suggestions.appendChild(opt);
         }
+        this.setAttribute("list", "");
+        this.setAttribute("list", "suggestions");
         //this.click();
         //this.click();
     });

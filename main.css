@@ -75,7 +75,8 @@ article {
   align-items: center;
 }
 article>div {
-    max-width:800px;
+    width: 800px;
+    max-width:100%;
 }
 article a.new {
     color: rgb(205,50,50);
@@ -106,4 +107,7 @@ nav {
     flex-grow: 1;
     flex-direction: column;
     justify-content: center;
+}
+#langs {
+    font-weight:bold;
 }
