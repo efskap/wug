@@ -165,21 +165,23 @@ function load_page(title, lang, useReplaceState) {
 
 function set_lang_from_hash() {
     let found_val = page_langs.find(x => x[1] == location.hash.substr(1));
+    console.log(`set_lang_from_hash, found_val=${found_val}`);
     if (found_val) {
         langs.value = found_val[1];
     }
-    on_lang_change();
+    on_lang_change(!found_val);
 }
 
-function on_lang_change() {
+function on_lang_change(useReplaceState=false) {
     updateTitle();
     if (langs.value !== "default") {
-        set_subpage(langs.value);
+        set_subpage(langs.value, useReplaceState);
     }
 }
 
 function sync_from_url() {
     let query = location.search.split("?")[1];
+    console.log(`sync_from_url, query=${query}`);
     if (query) {
         load_page(query);
     } else {
@@ -200,7 +202,8 @@ function updateTitle() {
     document.title = title;
 }
 
-function set_subpage(lang) {
+function set_subpage(lang, useReplaceState=false) {
+    console.log(`set_subpage, lang=${lang}, replaceState=${useReplaceState}`);
     if (langs.value != lang) {
         langs.value = lang;
     }
@@ -209,7 +212,11 @@ function set_subpage(lang) {
     else {
         let newUrl = location.href.replace(location.hash, '#' + lang);
         if (location.href !== newUrl) {
-            history.pushState(null, document.title, newUrl);
+            console.log(`${location.href} !== ${newUrl}, pushing new`);
+            if (useReplaceState)
+                history.replaceState(null, document.title, newUrl);
+            else
+                history.pushState(null, document.title, newUrl);
         }
     }
 
