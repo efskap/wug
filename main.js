@@ -295,4 +295,8 @@ inputbar.addEventListener('input', function() {
         //this.click();
     });
 });
+// firefox desktop fix:
+if (window.navigator.userAgent.includes('20100101')) {
+    inputbar.setAttribute("autoComplete", "off");
+}
 sync_from_url();
