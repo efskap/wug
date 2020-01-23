@@ -1,7 +1,9 @@
 # wug
-lightweight, meme-free online client for wiktionary
+## lightweight, meme-free online client for wiktionary
 
-Because Wiktionary's mobile site is uncomfy and bl0ated to heck.
+**Because Wiktionary's mobile site is uncomfy and bl0ated to heck.**
+
+https://wug.dmitry.lol/
 
 - Responsive single page application with caching, written in dependency-free vanilla ES6
 - Instead of viewing all languages on one page, you can choose a language from a dropdown, or automatically via a configurable priority list.
