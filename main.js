@@ -4,21 +4,23 @@ let sub_pages = {};
 let page_langs = [];
 let page_cache = {};
 
+set_theme(localStorage.getItem("theme") || "normal");
+
 function pre_fetch(title) {};
 
-function fetch_page(title) {
+async function fetch_page(title) {
     let cache_hit = page_cache[title];
     if (cache_hit) {
         console.log(`cache hit on ${title}!`);
-        return Promise.resolve(cache_hit);
+        return cache_hit;
     }
-    return fetch(`https://${hostname}/w/api.php?action=parse&page=${title}&origin=*&format=json`).then(x => x.json()).then(data => {
-        page_cache[title] = data;
-        return Promise.resolve(data);
-    });
+    const resp = await fetch(`https://${hostname}/w/api.php?action=parse&page=${title}&origin=*&format=json`);
+    const data = await resp.json();
+    page_cache[title] = data;
+    return data;
 }
 
-function load_page(title, lang, useReplaceState) {
+async function load_page(title, lang, useReplaceState) {
     let pretty_title = decodeURIComponent(title).replace('_', ' ');
 
     let original_hash = lang ? ('#' + lang) : location.hash;
@@ -44,6 +46,7 @@ function load_page(title, lang, useReplaceState) {
     document.title = `Loading ${pretty_title} - ${appName};`
 
     favlangs.value = localStorage.favlangs || '';
+
     domainbox.value = hostname;
     seealso.innerHTML = '';
     langs.innerHTML = '';
@@ -59,17 +62,16 @@ function load_page(title, lang, useReplaceState) {
     langs.innerHTML = '';
     langs.disabled = true;
 
-    fetch_page(title).then(
-        (data) => {
-            if (data.error) {
-                document.getElementById("content").innerHTML = `Error loading ${title}: <b>${data.error.info}</b>`;
-                return;
-            }
-            // load into virtual element
-            let fetch_html = data.parse.text['*'];
-            let html = document.createElement('body');
-            html.innerHTML = fetch_html;
-            html = html.firstChild; // get rid of top levl div
+    const data = await fetch_page(title);
+    if (data.error) {
+        document.getElementById("content").innerHTML = `Error loading ${title}: <b>${data.error.info}</b>`;
+        return;
+    }
+    // load into virtual element
+    let fetch_html = data.parse.text['*'];
+    let html = document.createElement('body');
+    html.innerHTML = fetch_html;
+    html = html.firstChild; // get rid of top levl div
 
             // populate title in header
             //document.getElementById('title').textContent = data.parse.title;
@@ -86,81 +88,86 @@ function load_page(title, lang, useReplaceState) {
                 langs.add(opt);
             };
 
-            let fav_lang_names = favlangs.value.split('\n');
-            for (const lang_name of fav_lang_names) {
-                let found_val = page_langs.find(x => x[0] == lang_name);
-                if (found_val) {
-                    add_lang(found_val);
-                }
+    let fav_lang_names  = favlangs.value.split('\n');
+    for (const lang_name of fav_lang_names) {
+        let found_val = page_langs.find(x => x[0] == lang_name);
+        if (found_val) {
+            add_lang(found_val);
+        }
+    }
+
+    for (const lang of page_langs.filter(x => !~fav_lang_names.indexOf(x[0]))) {
+        add_lang(lang);
+    }
+    langs.disabled = page_langs.length <= 1;
+
+
+    // delete table of contents
+    let toc = html.querySelector('#toc');
+    if (toc) {
+        toc.remove();
+    }
+
+    // delete edit links
+    for (const edit of html.querySelectorAll('.mw-editsection')) {
+        edit.remove();
+    }
+
+    for (const el of html.querySelectorAll('[style]')) {
+        el.style.background = null;
+        el.style.color = null;
+    }
+
+    for (const navFrame of html.querySelectorAll('.NavFrame:not(.pseudo)')) {
+        let detail = document.createElement("details");
+        let summary = document.createElement("summary");
+        summary.textContent = navFrame.querySelector('.NavHead').textContent;
+        detail.appendChild(summary);
+        detail.appendChild(navFrame.querySelector('.NavContent'));
+        navFrame.parentNode.insertBefore(detail.cloneNode(true), navFrame);
+        navFrame.remove();
+    }
+
+
+
+    let current_section_id = "";
+    sub_pages = {};
+
+    while (html.firstChild) {
+        let el = html.firstChild;
+        el.remove();
+        if (current_section_id == "" && el.nodeName == "DIV" && ~el.textContent.indexOf("See also:")) {
+            // move "See also" links to dropdown in UI
+            for (a of el.getElementsByTagName('a')) {
+                seealso.disabled = false;
+                let opt = document.createElement("option");
+                opt.value = a.title;
+                opt.text = a.text;
+                seealso.add(opt);
             }
-
-            for (const lang of page_langs.filter(x => !~fav_lang_names.indexOf(x[0]))) {
-                add_lang(lang);
+        } else if (el.nodeName == "H2") {
+            // start new subpage when we hit an <h2>
+            // (which designates the beginning of a new language section)
+            current_section_id = el.lastChild.id;
+            sub_pages[current_section_id] = document.createElement('div');
+        } else if (el.nodeName == "#text" || el.nodeName == "HR") {
+            // skrip <hr> and blank text
+            continue;
+        } else {
+            // otherwise just add the element to the current subpage
+            if (!(current_section_id in sub_pages)) {
+                sub_pages[current_section_id] = document.createElement('div');
             }
-            langs.disabled = page_langs.length <= 1;
+            sub_pages[current_section_id].appendChild(el);
+        }
+    }
+    if ('' in sub_pages) {
+        add_lang(['N/A', '']);
+    }
 
+    // if the hash specifies a language, switch to it
+    set_lang_from_hash();
 
-            // delete table of contents
-            let toc = html.querySelector('#toc');
-            if (toc) {
-                toc.remove();
-            }
-
-            // delete edit links
-            for (const edit of html.querySelectorAll('.mw-editsection')) {
-                edit.remove();
-            }
-
-            for (const navFrame of html.querySelectorAll('.NavFrame:not(.pseudo)')) {
-                let detail = document.createElement("details");
-                let summary = document.createElement("summary");
-                summary.textContent = navFrame.querySelector('.NavHead').textContent;
-                detail.appendChild(summary);
-                detail.appendChild(navFrame.querySelector('.NavContent'));
-                navFrame.parentNode.insertBefore(detail.cloneNode(true), navFrame);
-                navFrame.remove();
-            }
-
-
-
-            let current_section_id = "";
-            sub_pages = {};
-
-            while (html.firstChild) {
-                let el = html.firstChild;
-                el.remove();
-                if (current_section_id == "" && el.nodeName == "DIV" && ~el.textContent.indexOf("See also:")) {
-                    // move "See also" links to dropdown in UI
-                    for (a of el.getElementsByTagName('a')) {
-                        seealso.disabled = false;
-                        let opt = document.createElement("option");
-                        opt.value = a.title;
-                        opt.text = a.text;
-                        seealso.add(opt);
-                    }
-                } else if (el.nodeName == "H2") {
-                    // start new subpage when we hit an <h2>
-                    // (which designates the beginning of a new language section)
-                    current_section_id = el.lastChild.id;
-                    sub_pages[current_section_id] = document.createElement('div');
-                } else if (el.nodeName == "#text" || el.nodeName == "HR") {
-                    // skrip <hr> and blank text
-                    continue;
-                } else {
-                    // otherwise just add the element to the current subpage
-                    if (!(current_section_id in sub_pages)) {
-                        sub_pages[current_section_id] = document.createElement('div');
-                    }
-                    sub_pages[current_section_id].appendChild(el);
-                }
-            }
-            if ('' in sub_pages) {
-                add_lang(['N/A', '']);
-            }
-
-            // if the hash specifies a language, switch to it
-            set_lang_from_hash();
-        });
 }
 
 function set_lang_from_hash() {
@@ -185,7 +192,8 @@ function sync_from_url() {
     if (query) {
         load_page(query);
     } else {
-        let def = 'boomer'
+        let def = 'Wiktionary:Main_Page';
+        // TODO: random from fav lang if set
         load_page(def, null, true);
     }
 }
@@ -270,31 +278,42 @@ addfavlang.addEventListener('click', () => {
     favlangs.value = langs.options[langs.selectedIndex].text + "\n" + favlangs.value;
     favlangs.dispatchEvent(new Event('change'));
 });
+document.getElementById('theme-select').onchange = ev => {
+        localStorage.setItem('theme', ev.target.value);
+        set_theme(ev.target.value);
+}
 
-inputbar.addEventListener('focus', function() {
-    //this.setAttribute("list","suggestions");
-});
-inputbar.addEventListener('blur', function() {
-    //this.setAttribute("list","");
-});
-inputbar.addEventListener('input', function() {
+function set_theme(theme) {
+    for (const klass of document.body.classList.values()) {
+       if (klass.startsWith('theme-') ) {
+          document.body.classList.remove(klass);
+       }
+    }
+    document.body.classList.add(`theme-${theme}`);
+    document.getElementById("theme-select").value = theme;
+}
+
+inputbar.addEventListener('input', async function() {
     console.log('change');
     suggestions.innerHTML = '';
-    fetch(`https://en.wiktionary.org/w/api.php?action=opensearch&search=${encodeURIComponent(this.value)}&limit=15&namespace=0&format=json&origin=*`).then(x => x.json()).then((data) => {
-        console.log(data);
-        let [, titles, descriptions, links] = data;
-        links = links.map(x => x.split('/wiki/').pop());
-        for (const i in titles) {
-            let opt = document.createElement("option");
-            opt.value = titles[i];
-            suggestions.appendChild(opt);
-        }
-        this.setAttribute("list", "");
-        this.setAttribute("list", "suggestions");
+    const resp = await fetch(`https://en.wiktionary.org/w/api.php?action=opensearch&search=${encodeURIComponent(this.value)}&limit=15&namespace=0&format=json&origin=*`);
+    const data = await resp.json();
+    console.log(data);
+    let [, titles, descriptions, links] = data;
+    links = links.map(x=>x.split('/wiki/').pop());
+    for (const i in titles) {
+        let opt = document.createElement("option");
+        opt.value = titles[i];
+        suggestions.appendChild(opt);
+    }
+    //this.click();
         //this.click();
-        //this.click();
-    });
 });
+async function random_in_language(language) {
+
+    const resp = await fetch('//' + hostname + `/wiki/Special:RandomInCategory/${language}_lemmas#${language}`);
+    console.log(resp);
+}
 // firefox desktop fix:
 if (window.navigator.userAgent.includes('20100101')) {
     inputbar.setAttribute("autoComplete", "off");
